@@ -1,0 +1,22 @@
+body{
+	padding-top: 75px;
+}
+
+.bottom-spacer10{
+	margin-bottom: 100px;
+}
+
+.bottom-spacer5{
+	margin-bottom: 50px;
+}
+
+img{
+	margin-bottom: 15px;
+}
+
+#author{
+	text-indent: 15px;
+}
+#subreddit{
+	text-indent: 15px;
+}
