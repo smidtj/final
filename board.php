@@ -223,28 +223,32 @@ if(isset($_POST["loginUsername"]) && isset($_POST["loginPW"])){
 }
 
 if(isset($_POST["postTitle"]) && isset($_POST["postDescription"]) && isset($_POST["postSalary"]) && isset($_POST["postDate"])){
-  $title = $_POST["postTitle"];
-  $desc = $_POST["postDescription"];
-  $sal = $_POST["postSalary"];
-  $date = $_POST["postDate"];
-  $photo = $_SESSION["photo"];
-  $by = $_SESSION["username"];
-
-  $date = strtotime($date);
-  $date = date("Y-m-d", $date);
-
-  if (!($stmt = $mysqli->prepare("INSERT INTO jobListings(title, description, salary, postedBy, postedPhoto, startDate) VALUES (?, ?, ?, ?, ?, ?)"))) {
-          echo "Prepare failed: (" . $mysqli->errno . ") " . $mysqli->error;
-      } 
+  if(!isset($_SESSION["photo"]) || !isset($_SESSION["username"])){
+    echo '<script>alert("You must be logged in to post a Job Listing.")</script>';
+  } else {
+    $title = $_POST["postTitle"];
+    $desc = $_POST["postDescription"];
+    $sal = $_POST["postSalary"];
+    $date = $_POST["postDate"];
+    $photo = $_SESSION["photo"];
+    $by = $_SESSION["username"];
   
-      if (!$stmt->bind_param("ssisss", $title, $desc, $sal, $by, $photo, $date)) {
-          echo "Binding parameters failed: (" . $stmt->errno . ") " . $stmt->error;
-      }
+    $date = strtotime($date);
+    $date = date("Y-m-d", $date);
   
-      if (!$stmt->execute()) {
-          echo "Execute failed: (" . $stmt->errno . ") " . $stmt->error;
+    if (!($stmt = $mysqli->prepare("INSERT INTO jobListings(title, description, salary, postedBy, postedPhoto, startDate) VALUES (?, ?, ?, ?, ?, ?)"))) {
+            echo "Prepare failed: (" . $mysqli->errno . ") " . $mysqli->error;
+        } 
+    
+        if (!$stmt->bind_param("ssisss", $title, $desc, $sal, $by, $photo, $date)) {
+            echo "Binding parameters failed: (" . $stmt->errno . ") " . $stmt->error;
+        }
+    
+        if (!$stmt->execute()) {
+            echo "Execute failed: (" . $stmt->errno . ") " . $stmt->error;
+        }
+        $stmt->close();
       }
-      $stmt->close();
 }
 
 $titles = array();
@@ -396,8 +400,8 @@ if(isset($_SESSION["username"])){
       <div class="modal-body">
         <input type="text" class="form-control" placeholder="Job Title" name="postTitle" required>
         <input type="text" class="form-control" placeholder="Job Description" name="postDescription" required>
-        <input type="number" class="form-control" placeholder="Salary in $" name="postSalary" required>
-        <input type="date" class="form-control" placeholder="Start Date" name="postDate" max ="2100-01-01" required>
+        <input type="number" class="form-control" placeholder="Salary in $" name="postSalary" min="0" required>
+        <input type="date" class="form-control" placeholder="Start Date" name="postDate" max="2100-01-01" min="2015-03-03" required>
       </div>
       <div class="modal-footer">
 
