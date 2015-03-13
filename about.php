@@ -133,11 +133,11 @@ if(isset($_POST["createUsername"]) && isset($_POST["createPW"]) && !(($_FILES["f
       $_SESSION = array();
       session_destroy();
     } else {
-      if (!($stmt = $mysqli->prepare("INSERT INTO jobUsers(username, pw, photo) VALUES (?, ?, ?)"))) {
+      if (!($stmt = $mysqli->prepare("INSERT INTO jobUsers(username, pw) VALUES (?, ?)"))) {
           echo "Prepare failed: (" . $mysqli->errno . ") " . $mysqli->error;
       } 
-      $question = "question.gif";
-      if (!$stmt->bind_param("sss", $name, $pass, $question)) {
+  
+      if (!$stmt->bind_param("ss", $name, $pass)) {
           echo "Binding parameters failed: (" . $stmt->errno . ") " . $stmt->error;
       }
   
@@ -146,7 +146,6 @@ if(isset($_POST["createUsername"]) && isset($_POST["createPW"]) && !(($_FILES["f
       }
       $stmt->close();
       $_SESSION["username"] = $name;
-      $_SESSION["photo"] = $question;
     }
 }
 
@@ -385,16 +384,13 @@ if(isset($_SESSION["username"])){
     <div class="col-sm-9">
       <h2>What is this page for?</h1>
       <p>Hopefully you've found yourself here with a purpose, but just in case you haven't - Let me give you an overview of what's in store.</p>
-      	<dl class="dl-horizontal">
-            <dt><a href="about.php">About JOBsite</a>
-            	<dd>This is just a short blurb about what JOBsite it is. You can definately skip this section if you're already familiar with the basic functionality of a job listing website.</dd>
-            </dt>
-            <br>
-            <dt><a href="board.php">View All Posts</a>
-            	<dd>Here you can fill out the necessary information and post your company's most recent opening on this website!</dd>
-            </dt>
-            <br>            
-          </dl>
+          
+            <p>This Website is used to post listings for jobs.</p>
+
+            <p>Jobs can only be posted if a user is logged in.</p>
+
+            <p>Jobs can be browsed <a href="board.php">here</a>.</p>
+
        <p>Hope you enjoy JOBsite!</p>
 
     </div>
@@ -406,8 +402,8 @@ if(isset($_SESSION["username"])){
     </div>
   </div>
   <div class="row bottom-spacer10">
-  	<div class="col-sm-8"></div>
-  	<div class="col-sm-1"><a class="btn btn-default" href="board.php" role="button">Get Started!</a></div>
+    <div class="col-sm-8"></div>
+    <div class="col-sm-1"><a class="btn btn-default" href="board.php" role="button">Get Started!</a></div>
   </div>
 </div>
 

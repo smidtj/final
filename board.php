@@ -133,11 +133,11 @@ if(isset($_POST["createUsername"]) && isset($_POST["createPW"]) && !(($_FILES["f
       $_SESSION = array();
       session_destroy();
     } else {
-      if (!($stmt = $mysqli->prepare("INSERT INTO jobUsers(username, pw, photo) VALUES (?, ?, ?)"))) {
+      if (!($stmt = $mysqli->prepare("INSERT INTO jobUsers(username, pw) VALUES (?, ?)"))) {
           echo "Prepare failed: (" . $mysqli->errno . ") " . $mysqli->error;
       } 
-      $question = "question.gif";
-      if (!$stmt->bind_param("sss", $name, $pass, $question)) {
+  
+      if (!$stmt->bind_param("ss", $name, $pass)) {
           echo "Binding parameters failed: (" . $stmt->errno . ") " . $stmt->error;
       }
   
@@ -146,7 +146,6 @@ if(isset($_POST["createUsername"]) && isset($_POST["createPW"]) && !(($_FILES["f
       }
       $stmt->close();
       $_SESSION["username"] = $name;
-      $_SESSION["photo"] = $question;
     }
 }
 
@@ -223,6 +222,58 @@ if(isset($_POST["loginUsername"]) && isset($_POST["loginPW"])){
   }
 }
 
+if(isset($_POST["postTitle"]) && isset($_POST["postDescription"]) && isset($_POST["postSalary"]) && isset($_POST["postDate"])){
+  $title = $_POST["postTitle"];
+  $desc = $_POST["postDescription"];
+  $sal = $_POST["postSalary"];
+  $date = $_POST["postDate"];
+  $photo = $_SESSION["photo"];
+  $by = $_SESSION["username"];
+
+  $date = strtotime($date);
+  $date = date("Y-m-d", $date);
+
+  if (!($stmt = $mysqli->prepare("INSERT INTO jobListings(title, description, salary, postedBy, postedPhoto, startDate) VALUES (?, ?, ?, ?, ?, ?)"))) {
+          echo "Prepare failed: (" . $mysqli->errno . ") " . $mysqli->error;
+      } 
+  
+      if (!$stmt->bind_param("ssisss", $title, $desc, $sal, $by, $photo, $date)) {
+          echo "Binding parameters failed: (" . $stmt->errno . ") " . $stmt->error;
+      }
+  
+      if (!$stmt->execute()) {
+          echo "Execute failed: (" . $stmt->errno . ") " . $stmt->error;
+      }
+      $stmt->close();
+}
+
+$titles = array();
+$images = array();
+$posters = array();
+$descriptions = array();
+$salaries = array();
+$dates = array();
+
+function fill($getvalue, $mysqli){
+  $string = "SELECT " . $getvalue . " FROM jobListings"; 
+  $result = $mysqli->query($string); 
+  while ($object = $result->fetch_object()){ 
+    $arr[] = $object->$getvalue; 
+  }  
+  return $arr; 
+}
+
+$titles = fill("title", $mysqli);
+$numEntries = sizeof($titles);
+$images = fill("postedPhoto", $mysqli);
+$posters = fill("postedBy", $mysqli);
+$descriptions = fill("description", $mysqli);
+$salaries = fill("salary", $mysqli);
+$dates = fill("startDate", $mysqli);
+for($j = 0; $j < $numEntries; $j++){
+  $kaboom = explode(" ", $dates[$j]);
+  $dates[$j] = $kaboom[0];
+}
 ?>
 
 
@@ -333,6 +384,32 @@ if(isset($_SESSION["username"])){
   </div>
 </div>
 
+<!-- Modal newPost -->
+<div class="modal fade" id="newPost" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+    <form action="board.php" method="post">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Post Here</h4>
+      </div>
+      <div class="modal-body">
+        <input type="text" class="form-control" placeholder="Job Title" name="postTitle" required>
+        <input type="text" class="form-control" placeholder="Job Description" name="postDescription" required>
+        <input type="number" class="form-control" placeholder="Salary in $" name="postSalary" required>
+        <input type="date" class="form-control" placeholder="Start Date" name="postDate" max ="2100-01-01" required>
+      </div>
+      <div class="modal-footer">
+
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        <button type="submit" class="btn btn-primary">Post</button>
+        
+      </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 
 <!-- Modal createAccount -->
 <div class="modal fade" id="createAccount" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
@@ -375,28 +452,16 @@ if(isset($_SESSION["username"])){
     </div>
   </div>
 </div>
-
-<div class="container">
+<?php
+if(!isset($_GET["myInfo"])){
+ echo '<div class="container">
   <div class="jumbotron" style="background-color: #9E9 !important">
     <h1>Post and Browse Job Listings</h1>
     <p style="color: #FFF">By: Jesse Smidt</p> 
   </div>
   <div class="row bottom-spacer5">
     <div class="col-sm-9">
-      <h2>What is this page for?</h1>
-      <p>Hopefully you've found yourself here with a purpose, but just in case you haven't - Let me give you an overview of what's in store.</p>
-      	<dl class="dl-horizontal">
-            <dt><a href="about.php">About JOBsite</a>
-            	<dd>This is just a short blurb about what JOBsite it is. You can definately skip this section if you're already familiar with the basic functionality of a job listing website.</dd>
-            </dt>
-            <br>
-            <dt><a href="board.php">View All Posts</a>
-            	<dd>Here you can fill out the necessary information and post your company's most recent opening on this website!</dd>
-            </dt>
-            <br>            
-          </dl>
-       <p>Hope you enjoy JOBsite!</p>
-
+      <h2>Below you can find all the posts made to this website</h1>
     </div>
     <div class="col-sm-1"></div>
     <div class="col-sm-2">
@@ -404,13 +469,85 @@ if(isset($_SESSION["username"])){
       <p><a href="about.php">About JOBsite</a></p>
       <p><a href="board.php">View All Posts</a></p>
     </div>
-  </div>
-  <div class="row bottom-spacer10">
-  	<div class="col-sm-8"></div>
-  	<div class="col-sm-1"><a class="btn btn-default" href="board.php" role="button">Get Started!</a></div>
-  </div>
-</div>
+    <div class="row bottom-spacer10">
+      <div class="col-sm-1">
+        <button type="button" class="btn btn-default" data-dismiss="modal" data-toggle="modal" data-target="#newPost">
+          Post Job Listing
+        </button></div>
+      <div class="col-sm-8"></div>
+    </div>
+  </div>';
 
 
+  for($i = ($numEntries - 1); $i > -1; $i--){  
+    echo '<div class="row">
+      <div class="col-sm-9">
+        <div class="col-sm-4"><img src="uploads/'.$images[$i].'" height="150" width="200"></div>
+        <div class="col-sm-3"><p class="title">'.$titles[$i].'</p></div>
+        <div class="col-sm-2"><p>Posted By: '.$posters[$i].'</p></div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-sm-9">
+        <p>'.$descriptions[$i].'</p>
+      </div>
+    </div>
+    <div class="row bottom-spacer20">
+      <div class="col-sm-9">
+        <div class="col-sm-6"><p>$'.$salaries[$i].'/Year</p></div>
+        <div class="col-sm-3"><p>Start Date: '.$dates[$i].'</p></div>
+      </div>
+    </div>';
+  }
+} else{
+ echo '<div class="container">
+  <div class="jumbotron" style="background-color: #9E9 !important">
+    <h1>Your Posts</h1>
+    <p style="color: #FFF">'.$_SESSION['username'].'</p> 
+  </div>
+  <div class="row bottom-spacer5">
+    <div class="col-sm-9">
+      <h2>Below are all the posts you have made to this website</h1>
+    </div>
+    <div class="col-sm-1"></div>
+    <div class="col-sm-2">
+      <h3>Navigation</h3>
+      <p><a href="about.php">About JOBsite</a></p>
+      <p><a href="board.php">View All Posts</a></p>
+    </div>
+    <div class="row bottom-spacer10">
+      <div class="col-sm-1">
+        <button type="button" class="btn btn-default" data-dismiss="modal" data-toggle="modal" data-target="#newPost">
+          Post Job Listing
+        </button></div>
+      <div class="col-sm-8"></div>
+    </div>
+  </div>';
+
+  for($i = ($numEntries - 1); $i > -1; $i--){
+    if ($posters[$i] == $_SESSION['username']){  
+      echo '<div class="row">
+        <div class="col-sm-9">
+          <div class="col-sm-4"><img src="uploads/'.$images[$i].'" height="150" width="200"></div>
+          <div class="col-sm-3"><p class="title">'.$titles[$i].'</p></div>
+          <div class="col-sm-2"><p>Posted By: '.$posters[$i].'</p></div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-sm-9">
+          <p>'.$descriptions[$i].'</p>
+        </div>
+      </div>
+      <div class="row bottom-spacer20">
+        <div class="col-sm-9">
+          <div class="col-sm-6"><p>$'.$salaries[$i].'/Year</p></div>
+          <div class="col-sm-3"><p>Start Date: '.$dates[$i].'</p></div>
+        </div>
+      </div>';
+    }
+  }
+}
+echo '</div>';
+?>
 </body>
 </html>
